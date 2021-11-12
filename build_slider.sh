@@ -8,6 +8,11 @@ function exit_if_error {
   fi
 }
 
+#
+EXPERIMENTAL_BUILD=0
+BUILD_KERNEL=1
+#
+
 EXPERIMENTAL_BUILD=${EXPERIMENTAL_BUILD:-0}
 TRIM_NONLISTED_KMI=${TRIM_NONLISTED_KMI:-1}
 LTO=${LTO:-thin}
@@ -27,19 +32,19 @@ if [ -z "${BUILD_KERNEL}" ]; then
   fi
 fi
 
-if [ "${BUILD_KERNEL}" = "0" ]; then
-  USING_PREBUILTS=1
-  GKI_KERNEL_PREBUILTS_DIR=$(readlink -m "prebuilts/boot-artifacts/kernel/")
-else
-  USING_PREBUILTS=
-  if [ "${EXPERIMENTAL_BUILD}" != "0" ]; then
-    GKI_KERNEL_OUT_DIR=android12-5.10-staging
-    GKI_KERNEL_BUILD_CONFIG=common/build.config.gki.aarch64
-  else
-    GKI_KERNEL_OUT_DIR=android12-5.10
-    GKI_KERNEL_BUILD_CONFIG=aosp/build.config.gki.aarch64
-  fi
-fi
+#if [ "${BUILD_KERNEL}" = "0" ]; then
+#  USING_PREBUILTS=1
+#  GKI_KERNEL_PREBUILTS_DIR=$(readlink -m "prebuilts/boot-artifacts/kernel/")
+#else
+#  USING_PREBUILTS=
+#  if [ "${EXPERIMENTAL_BUILD}" != "0" ]; then
+#    GKI_KERNEL_OUT_DIR=android12-5.10-staging
+#    GKI_KERNEL_BUILD_CONFIG=common/build.config.gki.aarch64
+#  else
+#    GKI_KERNEL_OUT_DIR=android12-5.10
+#    GKI_KERNEL_BUILD_CONFIG=aosp/build.config.gki.aarch64
+#  fi
+#fi
 
 if [ "${LTO}" = "none" ]; then
   echo "LTO=none requires disabling KMI_SYMBOL_STRICT_MODE. Setting to 0..."
