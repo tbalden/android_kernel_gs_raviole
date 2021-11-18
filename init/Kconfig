@@ -1369,6 +1369,17 @@ config LD_ORPHAN_WARN
 	depends on !LD_IS_LLD || LLD_VERSION >= 110000
 	depends on $(ld-option,--orphan-handling=warn)
 
+config USERLAND_WORKER
+	bool "Run userspace functions from the kernel"
+	help
+	  Enabling this option will give you access to userspace
+	  functions, being able to call them from the kernel space.
+
+config USERLAND_WORKER_DATA_LOCAL
+	bool "For userland driver use data/local/tmp storage instead of /dev/"
+	help
+	  For userland driver use data/local/tmp storage instead of /dev/
+
 config SYSCTL
 	bool
 
