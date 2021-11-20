@@ -24,11 +24,11 @@ else
 	VERSION=$KBUILD_BUILD_VERSION
 fi
 
-if [ -z "$KBUILD_BUILD_TIMESTAMP" ]; then
-	TIMESTAMP=`date`
-else
-	TIMESTAMP=$KBUILD_BUILD_TIMESTAMP
-fi
+#if [ -z "$KBUILD_BUILD_TIMESTAMP" ]; then
+TIMESTAMP=`date`
+#else
+#	TIMESTAMP=$KBUILD_BUILD_TIMESTAMP
+#fi
 if test -z "$KBUILD_BUILD_USER"; then
 	LINUX_COMPILE_BY=$(whoami | sed 's/\\/\\\\/')
 else
