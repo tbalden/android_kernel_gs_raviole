@@ -966,6 +966,7 @@
   __ioremap
   io_schedule_timeout
   iounmap
+  iov_iter_bvec
   ip_send_check
   iput
   __irq_alloc_descs
@@ -1245,6 +1246,7 @@
   of_get_regulator_init_data
   of_iomap
   of_irq_find_parent
+  of_irq_get
   of_irq_get_byname
   of_irq_parse_one
   of_machine_is_compatible
@@ -1354,6 +1356,7 @@
   pinctrl_remove_gpio_range
   pinctrl_select_state
   pin_get_name
+  pin_user_pages
   pin_user_pages_fast
   pin_user_pages_remote
   pktgen_xfrm_outer_mode_output
