@@ -50,7 +50,7 @@
 #define USE_RESET_PROPS
 #define RUN_RESET_PROPS_BEFORE_DECRYPT
 //#define RUN_RESET_PROPS_AFTER_DECRYPT
-//#define USE_LOCK_HIDE
+#define USE_LOCK_HIDE
 //#define USE_PIXEL_PROP
 
 #define USE_PACKED_HOSTS
@@ -696,9 +696,17 @@ static void run_resetprops(void) {
 // don't use pixel prop hack on Pixels, it breaks At a glance / google backup
 //			ret = call_userspace(BIN_RESETPROP,
 //				"ro.product.model", "ASUS_I006D ", "resetprop product model");
-			ret = call_userspace(BIN_RESETPROP, "ro.boot.flash.locked", "1", "resetprop verifiedbootstate");
+			bool is_raven_model = true;// TODO
+			if (is_raven_model) {
+				ret = call_userspace(BIN_RESETPROP,
+				    "ro.product.name", "Pixel 6 Pro", "resetprop product");
+			} else {
+				ret = call_userspace(BIN_RESETPROP,
+				    "ro.product.name", "Pixel 6", "resetprop product");
+			}
 #else
 			ret = call_userspace(BIN_RESETPROP, "ro.boot.flash.locked", "1", "resetprop verifiedbootstate");
+
 #endif
 			if (ret) {
 			    pr_info("%s can't set resetprop yet. sleep...\n",__func__);
@@ -712,6 +720,7 @@ static void run_resetprops(void) {
 			pr_err("Couldn't set device props! %d", ret);
 		}
 #ifdef USE_LOCK_HIDE
+		ret = call_userspace(BIN_RESETPROP, "ro.boot.flash.locked", "1", "resetprop verifiedbootstate");
 		ret = call_userspace(BIN_RESETPROP, "ro.boot.vbmeta.device_state", "locked", "resetprop verifiedbootstate");
 		ret = call_userspace(BIN_RESETPROP, "ro.boot.verifiedbootstate", "green", "resetprop verifiedbootstate");
 		ret = call_userspace(BIN_RESETPROP, "ro.boot.veritymode", "enforcing", "resetprop verifiedbootstate");
