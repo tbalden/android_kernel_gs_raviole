@@ -50,8 +50,7 @@ $(objtree)/drivers/scsi/ufs/ufs-pixel-fips140.ko: FORCE
 	@true
 
 clean:
-	rm -f $(objtree)/drivers/scsi/ufs/ufs-pixel-fips140.ko.rela.text
-	rm -f $(objtree)/crypto/fips140.ko.rela.*
+	rm -f $(objtree)/crypto/fips140.ko.rela.* $(objtree)/drivers/scsi/ufs/ufs-pixel-fips140.ko.rela.text
 
 PHONY += FORCE clean
 

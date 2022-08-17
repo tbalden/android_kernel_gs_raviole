@@ -1605,7 +1605,7 @@ static void __init init_uclamp_rq(struct rq *rq)
 		};
 	}
 
-	rq->uclamp_flags = 0;
+	rq->uclamp_flags = UCLAMP_FLAG_IDLE;
 }
 
 static void __init init_uclamp(void)
@@ -3503,7 +3503,6 @@ int sched_fork(unsigned long clone_flags, struct task_struct *p)
 	init_entity_runnable_average(&p->se);
 	trace_android_rvh_finish_prio_fork(p);
 
-
 #ifdef CONFIG_SCHED_INFO
 	if (likely(sched_info_on()))
 		memset(&p->sched_info, 0, sizeof(p->sched_info));
@@ -3519,24 +3518,18 @@ int sched_fork(unsigned long clone_flags, struct task_struct *p)
 	return 0;
 }
 
-void sched_cgroup_fork(struct task_struct *p, struct kernel_clone_args *kargs)
+void sched_post_fork(struct task_struct *p, struct kernel_clone_args *kargs)
 {
 	unsigned long flags;
+#ifdef CONFIG_CGROUP_SCHED
+	struct task_group *tg;
+#endif
 
-	/*
-	 * Because we're not yet on the pid-hash, p->pi_lock isn't strictly
-	 * required yet, but lockdep gets upset if rules are violated.
-	 */
 	raw_spin_lock_irqsave(&p->pi_lock, flags);
 #ifdef CONFIG_CGROUP_SCHED
-	if (1) {
-		struct task_group *tg;
-
-		tg = container_of(kargs->cset->subsys[cpu_cgrp_id],
-				  struct task_group, css);
-		tg = autogroup_task_group(p, tg);
-		p->sched_task_group = tg;
-	}
+	tg = container_of(kargs->cset->subsys[cpu_cgrp_id],
+			  struct task_group, css);
+	p->sched_task_group = autogroup_task_group(p, tg);
 #endif
 	rseq_migrate(p);
 	/*
@@ -3547,10 +3540,7 @@ void sched_cgroup_fork(struct task_struct *p, struct kernel_clone_args *kargs)
 	if (p->sched_class->task_fork)
 		p->sched_class->task_fork(p);
 	raw_spin_unlock_irqrestore(&p->pi_lock, flags);
-}
 
-void sched_post_fork(struct task_struct *p)
-{
 	uclamp_post_fork(p);
 }
 
@@ -4013,6 +4003,7 @@ context_switch(struct rq *rq, struct task_struct *prev,
 		 * finish_task_switch()'s mmdrop().
 		 */
 		switch_mm_irqs_off(prev->active_mm, next->mm, next);
+		lru_gen_use_mm(next->mm);
 
 		if (!prev->mm) {                        // from kernel
 			/* will mmdrop() in finish_task_switch(). */
@@ -4231,7 +4222,6 @@ unsigned long long task_sched_runtime(struct task_struct *p)
 
 	return ns;
 }
-EXPORT_SYMBOL_GPL(task_sched_runtime);
 
 /*
  * This function gets called by the timer code, with HZ frequency.
@@ -4629,6 +4619,23 @@ restart:
 	BUG();
 }
 
+static bool __task_can_run(struct task_struct *prev)
+{
+	if (__fatal_signal_pending(prev))
+		return true;
+
+	if (!frozen_or_skipped(prev))
+		return true;
+
+	/*
+	 * We can't safely go back on the runqueue if we're an asymmetric
+	 * task skipping the freezer. Doing so can lead to migration failures
+	 * later on if there aren't any suitable CPUs left around for us to
+	 * move to.
+	 */
+	return task_cpu_possible_mask(prev) == cpu_possible_mask;
+}
+
 /*
  * __schedule() is the main scheduler function.
  *
@@ -4722,7 +4729,7 @@ static void __sched notrace __schedule(bool preempt)
 	 */
 	prev_state = prev->state;
 	if (!preempt && prev_state) {
-		if (signal_pending_state(prev_state, prev)) {
+		if (signal_pending_state(prev_state, prev) && __task_can_run(prev)) {
 			prev->state = TASK_RUNNING;
 		} else {
 			prev->sched_contributes_to_load =
@@ -6356,8 +6363,6 @@ static void do_sched_yield(void)
 
 	schedstat_inc(rq->yld_count);
 	current->sched_class->yield_task(rq);
-
-	trace_android_rvh_do_sched_yield(rq);
 
 	preempt_disable();
 	rq_unlock_irq(rq, &rf);

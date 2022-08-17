@@ -37,15 +37,16 @@
 
 /* Thermal Zones */
 &thermal_zones {
-	batoilo {
-		zone_name  = "BATOILO";
+	soc {
+		zone_name  = "BATT_SOC_MOD";
 		polling-delay-passive = <0>;
 		polling-delay = <0>;
-		thermal-sensors = <&google_mitigation 3>;
+		thermal-sensors = <&google_mitigation 0>;
+
 		trips {
-			batoilo: batoilo{
-				temperature = <5000>;
-				hysteresis = <100>;
+			soc_trip:soc-trip {
+				temperature = <90>;
+				hysteresis = <0>;
 				type = "passive";
 			};
 		};
@@ -79,11 +80,18 @@
 		};
 	};
 
-	battery_cycle {
-		zone_name  = "BATTERY_CYCLE";
-		polling-delay-passive = <100>;
+	batoilo {
+		zone_name  = "BATOILO";
+		polling-delay-passive = <0>;
 		polling-delay = <0>;
-		thermal-sensors = <&google_battery>;
+		thermal-sensors = <&google_mitigation 3>;
+		trips {
+			batoilo: batoilo{
+				temperature = <5000>;
+				hysteresis = <100>;
+				type = "passive";
+			};
+		};
 	};
 
 	pmic_120c {
@@ -128,19 +136,11 @@
 		};
 	};
 
-	soc {
-		zone_name  = "BATT_SOC_MOD";
-		polling-delay-passive = <0>;
+	battery_cycle {
+		zone_name  = "BATTERY_CYCLE";
+		polling-delay-passive = <100>;
 		polling-delay = <0>;
-		thermal-sensors = <&google_mitigation 0>;
-
-		trips {
-			soc_trip:soc-trip {
-				temperature = <90>;
-				hysteresis = <0>;
-				type = "passive";
-			};
-		};
+		thermal-sensors = <&google_battery>;
 	};
 
 	smpl_gm {

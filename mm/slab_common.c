@@ -313,16 +313,6 @@ kmem_cache_create_usercopy(const char *name,
 	get_online_cpus();
 	get_online_mems();
 
-#ifdef CONFIG_SLUB_DEBUG
-	/*
-	 * If no slub_debug was enabled globally, the static key is not yet
-	 * enabled by setup_slub_debug(). Enable it if the cache is being
-	 * created with any of the debugging flags passed explicitly.
-	 */
-	if (flags & SLAB_DEBUG_FLAGS)
-		static_branch_enable(&slub_debug_enabled);
-#endif
-
 	mutex_lock(&slab_mutex);
 
 	err = kmem_cache_sanity_check(name, size);
@@ -498,7 +488,7 @@ void kmem_cache_destroy(struct kmem_cache *s)
 {
 	int err;
 
-	if (unlikely(!s))
+	if (unlikely(!s) || !kasan_check_byte(s))
 		return;
 
 	get_online_cpus();
@@ -650,7 +640,6 @@ static inline unsigned int size_index_elem(unsigned int bytes)
 struct kmem_cache *kmalloc_slab(size_t size, gfp_t flags)
 {
 	unsigned int index;
-	struct kmem_cache *s = NULL;
 
 	if (size <= 192) {
 		if (!size)
@@ -662,10 +651,6 @@ struct kmem_cache *kmalloc_slab(size_t size, gfp_t flags)
 			return NULL;
 		index = fls(size - 1);
 	}
-
-	trace_android_vh_kmalloc_slab(index, flags, &s);
-	if (s)
-		return s;
 
 	return kmalloc_caches[kmalloc_type(flags)][index];
 }
@@ -950,6 +935,7 @@ static void print_slabinfo_header(struct seq_file *m)
 	seq_puts(m, " : globalstat <listallocs> <maxobjs> <grown> <reaped> <error> <maxfreeable> <nodeallocs> <remotefrees> <alienoverflow>");
 	seq_puts(m, " : cpustat <allochit> <allocmiss> <freehit> <freemiss>");
 #endif
+	trace_android_vh_print_slabinfo_header(m);
 	seq_putc(m, '\n');
 }
 
@@ -985,6 +971,7 @@ static void cache_show(struct kmem_cache *s, struct seq_file *m)
 	seq_printf(m, " : slabdata %6lu %6lu %6lu",
 		   sinfo.active_slabs, sinfo.num_slabs, sinfo.shared_avail);
 	slabinfo_show_stats(m, s);
+	trace_android_vh_cache_show(m, &sinfo, s);
 	seq_putc(m, '\n');
 }
 

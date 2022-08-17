@@ -31,6 +31,8 @@
 #define  RSC_DESCR_VER  1
 
 struct trusty_vdev;
+static bool use_high_wq;
+module_param(use_high_wq, bool, 0660);
 
 struct trusty_ctx {
 	struct device		*dev;
@@ -736,7 +738,8 @@ static int trusty_virtio_probe(struct platform_device *pdev)
 
 	set_dma_ops(&pdev->dev, &trusty_virtio_dma_map_ops);
 
-	tctx->check_wq = alloc_workqueue("trusty-check-wq", WQ_UNBOUND, 0);
+	tctx->check_wq = alloc_workqueue("trusty-check-wq",
+					 WQ_UNBOUND | WQ_HIGHPRI, 0);
 	if (!tctx->check_wq) {
 		ret = -ENODEV;
 		dev_err(&pdev->dev, "Failed create trusty-check-wq\n");

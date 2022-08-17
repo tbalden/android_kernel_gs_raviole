@@ -587,7 +587,7 @@ again:
 		lock_page(page);
 		shmem_swizzled = PageSwapCache(page) || page->mapping;
 		unlock_page(page);
-		put_user_page(page);
+		put_page(page);
 
 		if (shmem_swizzled)
 			goto again;
@@ -637,7 +637,7 @@ again:
 
 		if (READ_ONCE(page->mapping) != mapping) {
 			rcu_read_unlock();
-			put_user_page(page);
+			put_page(page);
 
 			goto again;
 		}
@@ -645,7 +645,7 @@ again:
 		inode = READ_ONCE(mapping->host);
 		if (!inode) {
 			rcu_read_unlock();
-			put_user_page(page);
+			put_page(page);
 
 			goto again;
 		}
@@ -657,7 +657,7 @@ again:
 	}
 
 out:
-	put_user_page(page);
+	put_page(page);
 	return err;
 }
 
@@ -2607,10 +2607,8 @@ static void futex_wait_queue_me(struct futex_hash_bucket *hb, struct futex_q *q,
 		 * flagged for rescheduling. Only call schedule if there
 		 * is no timeout, or if it has yet to expire.
 		 */
-		if (!timeout || timeout->task) {
-			trace_android_vh_futex_sleep_start(current);
+		if (!timeout || timeout->task)
 			freezable_schedule();
-		}
 	}
 	__set_current_state(TASK_RUNNING);
 }

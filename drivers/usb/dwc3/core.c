@@ -1526,17 +1526,15 @@ static int dwc3_probe(struct platform_device *pdev)
 {
 	struct device		*dev = &pdev->dev;
 	struct resource		*res, dwc_res;
-	struct dwc3_vendor	*vdwc;
 	struct dwc3		*dwc;
 
 	int			ret;
 
 	void __iomem		*regs;
 
-	vdwc = devm_kzalloc(dev, sizeof(*vdwc), GFP_KERNEL);
-	if (!vdwc)
+	dwc = devm_kzalloc(dev, sizeof(*dwc), GFP_KERNEL);
+	if (!dwc)
 		return -ENOMEM;
-	dwc = &vdwc->dwc;
 
 	dwc->dev = dev;
 
@@ -1567,6 +1565,12 @@ static int dwc3_probe(struct platform_device *pdev)
 	dwc->regs_size	= resource_size(&dwc_res);
 
 	dwc3_get_properties(dwc);
+
+	if (!dwc->sysdev_is_parent) {
+		ret = dma_set_mask_and_coherent(dwc->sysdev, DMA_BIT_MASK(64));
+		if (ret)
+			return ret;
+	}
 
 	dwc->reset = devm_reset_control_array_get_optional_shared(dev);
 	if (IS_ERR(dwc->reset))

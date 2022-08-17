@@ -158,6 +158,8 @@ static bool __percpu *hotplug_ing;
 static int cpuidle_state_max;
 static int system_suspended;
 static int system_rebooting;
+bool system_is_in_itmon;
+EXPORT_SYMBOL_GPL(system_is_in_itmon);
 
 #define NSCODE_BASE		(0xBFFFF000)
 #define CPU_STATE_BASE_OFFSET	0x2C
@@ -448,7 +450,7 @@ static ssize_t profile_show(struct device *dev,
 		for_each_possible_cpu(cpu) {
 			pm = per_cpu_ptr(cpupm, cpu);
 			ret += snprintf(buf + ret, PAGE_SIZE - ret,
-					"cpu%d %d %d %lld (%d%%)\n",
+					"cpu%d %d %d %lld (%lld%%)\n",
 					cpu,
 					pm->stat_snapshot[i].entry_count,
 					pm->stat_snapshot[i].cancel_count,
@@ -460,7 +462,7 @@ static ssize_t profile_show(struct device *dev,
 
 	list_for_each_entry(mode, &mode_list, list) {
 		ret += snprintf(buf + ret, PAGE_SIZE - ret,
-				"%-7s %d %d %lld (%d%%)\n",
+				"%-7s %d %d %lld (%lld%%)\n",
 				mode->name,
 				mode->stat_snapshot.entry_count,
 				mode->stat_snapshot.cancel_count,
@@ -575,7 +577,7 @@ static ssize_t time_in_state_show(struct device *dev,
 		for_each_possible_cpu(cpu) {
 			pm = per_cpu_ptr(cpupm, cpu);
 			ret += snprintf(buf + ret, PAGE_SIZE - ret,
-					"cpu%d %d %d %lld (%d%%)\n",
+					"cpu%d %d %d %lld (%lld%%)\n",
 					cpu,
 					pm->stat[i].entry_count,
 					pm->stat[i].cancel_count,
@@ -587,7 +589,7 @@ static ssize_t time_in_state_show(struct device *dev,
 
 	list_for_each_entry(mode, &mode_list, list) {
 		ret += snprintf(buf + ret, PAGE_SIZE - ret,
-				"%-7s %d %d %lld (%d%%)\n",
+				"%-7s %d %d %lld (%lld%%)\n",
 				mode->name,
 				mode->stat.entry_count,
 				mode->stat.cancel_count,
@@ -972,6 +974,10 @@ static int exynos_cpu_pm_notify_callback(struct notifier_block *self,
 		/* ignore CPU_PM_ENTER event in suspend sequence */
 		if (system_suspended)
 			return NOTIFY_OK;
+
+		/* ignore CPU_PM_ENTER event in itmon sequence */
+		if (system_is_in_itmon)
+			return NOTIFY_BAD;
 
 		/*
 		 * There are few block condition of C2.
@@ -1435,6 +1441,8 @@ static int exynos_cpupm_probe(struct platform_device *pdev)
 
 	system_rebooting = false;
 	register_reboot_notifier(&exynos_cpupm_reboot_nb);
+
+	system_is_in_itmon = false;
 
 	ret = cpu_pm_register_notifier(&exynos_cpu_pm_notifier);
 	if (ret)

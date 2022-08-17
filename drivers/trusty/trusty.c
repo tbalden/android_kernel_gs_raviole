@@ -24,6 +24,9 @@
 struct trusty_state;
 static struct platform_driver trusty_driver;
 
+static bool use_high_wq;
+module_param(use_high_wq, bool, 0660);
+
 struct trusty_work {
 	struct trusty_state *ts;
 	struct work_struct work;
@@ -753,9 +756,26 @@ static void nop_work_func(struct work_struct *work)
 	u32 last_arg0;
 	struct trusty_work *tw = container_of(work, struct trusty_work, work);
 	struct trusty_state *s = tw->ts;
+	int old_nice = task_nice(current);
+	bool nice_changed = false;
 
 	dequeue_nop(s, args);
 	do {
+		/*
+		 * In case use_high_wq flaged when trusty is not idle,
+		 * change the work's prio directly.
+		 */
+		if (!WARN_ON(current->policy != SCHED_NORMAL)) {
+			if (use_high_wq && task_nice(current) != MIN_NICE) {
+				nice_changed = true;
+				set_user_nice(current, MIN_NICE);
+			} else if (!use_high_wq &&
+				   task_nice(current) == MIN_NICE) {
+				nice_changed = true;
+				set_user_nice(current, 0);
+			}
+		}
+
 		dev_dbg(s->dev, "%s: %x %x %x\n",
 			__func__, args[0], args[1], args[2]);
 
@@ -779,7 +799,11 @@ static void nop_work_func(struct work_struct *work)
 			}
 		}
 	} while (next);
-
+	/*
+	 * Restore nice if even changed.
+	 */
+	if (nice_changed)
+		set_user_nice(current, old_nice);
 	dev_dbg(s->dev, "%s: done\n", __func__);
 }
 

@@ -126,9 +126,9 @@
 #define B2S_SOFT_OCP_WARN	S2MPG11_PM_B2S_SOFT_OCP_WARN
 #define MAIN_CHIPID		S2MPG10_COMMON_CHIPID
 #define SUB_CHIPID		S2MPG11_COMMON_CHIPID
-#define INT3_120C		S2MPG10_IRQ_120C_INT3
-#define INT3_140C		S2MPG10_IRQ_140C_INT3
-#define INT3_TSD		S2MPG10_IRQ_TSD_INT3
+#define INT3_120C		S2MPG10_IRQ_120C_INT3;
+#define INT3_140C		S2MPG10_IRQ_140C_INT3;
+#define INT3_TSD		S2MPG10_IRQ_TSD_INT3;
 #define S2MPG1X_WRITE(pmic, bcl_dev, ret, args...)                             \
 	do {                                                                   \
 		switch (pmic) {                                                \
@@ -3641,7 +3641,6 @@ static int google_bcl_probe(struct platform_device *pdev)
 	if (!bcl_dev)
 		return -ENOMEM;
 	bcl_dev->device = &pdev->dev;
-	bcl_dev->iodev = dev_get_drvdata(pdev->dev.parent);
 
 	INIT_DELAYED_WORK(&bcl_dev->init_work, google_set_intf_pmic_work);
 	platform_set_drvdata(pdev, bcl_dev);
@@ -3696,6 +3695,8 @@ static struct platform_driver google_bcl_driver = {
 };
 
 module_platform_driver(google_bcl_driver);
+
+MODULE_SOFTDEP("pre: i2c-acpm");
 MODULE_DESCRIPTION("Google Battery Current Limiter");
 MODULE_AUTHOR("George Lee <geolee@google.com>");
 MODULE_LICENSE("GPL");

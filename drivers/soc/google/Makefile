@@ -47,11 +47,17 @@ obj-$(CONFIG_HARDLOCKUP_DEBUG)		+= hardlockup-debug.o
 
 obj-$(CONFIG_HARDLOCKUP_WATCHDOG)	+= hardlockup-watchdog.o
 
+obj-$(CONFIG_SYSRQ_HOOK)	+= sysrq-hook.o
+
 # vh/kernel/sched
 obj-$(CONFIG_VH_KERNEL)			+= vh/kernel/
+
+obj-$(CONFIG_PIXEL_EM)			+= pixel_em/
 
 obj-$(CONFIG_PIXEL_STAT)		+= pixel_stat/
 
 obj-$(CONFIG_DBGCORE_DUMP)		+= dbgcore-dump.o
 
 obj-$(CONFIG_EXYNOS_SECURE_LOG) 	+= exynos-seclog.o
+
+obj-$(CONFIG_BOOT_CONTROL)	 	+= boot_control/

@@ -5,7 +5,6 @@
 
 #if !defined(_TRACE_HOOK_FAULT_H) || defined(TRACE_HEADER_MULTI_READ)
 #define _TRACE_HOOK_FAULT_H
-#include <linux/tracepoint.h>
 #include <trace/hooks/vendor_hooks.h>
 /*
  * Following tracepoints are not exported in tracefs and provide a
@@ -28,10 +27,6 @@ DECLARE_RESTRICTED_HOOK(android_rvh_do_sp_pc_abort,
 	TP_PROTO(struct pt_regs *regs, unsigned int esr, unsigned long addr, bool user),
 	TP_ARGS(regs, esr, addr, user),
 	TP_CONDITION(!user));
-
-DECLARE_HOOK(android_vh_handle_tlb_conf,
-	TP_PROTO(unsigned long addr, unsigned int esr, int *ret),
-	TP_ARGS(addr, esr, ret));
 
 /* macro versions of hooks are no longer required */
 

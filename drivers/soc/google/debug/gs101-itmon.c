@@ -15,6 +15,7 @@
 #include <linux/delay.h>
 #include <soc/google/exynos-itmon.h>
 #include <soc/google/debug-snapshot.h>
+#include <soc/google/exynos-cpupm.h>
 
 #define OFFSET_TMOUT_REG		(0x2000)
 #define OFFSET_REQ_R			(0x0)
@@ -823,7 +824,7 @@ static struct itmon_nodeinfo vec_p2[] = {
 	{S_NODE, "MFC",		0x1F2D3000, 1, 1, 0, 0, TMOUT, 1},
 	{S_NODE, "PDP",		0x1F253000, 1, 1, 0, 0, TMOUT, 1},
 	{S_NODE, "SFR_BUS1",	0x1F213000, 1, 1, 0, 0, TMOUT, 1},
-	{S_NODE, "SFR_TREX_BUS1", 0x1F213000, 1, 1, 0, 0, TMOUT, 1},
+	{S_NODE, "SFR_TREX_BUS1", 0x1F203000, 1, 1, 0, 0, TMOUT, 1},
 	{S_NODE, "TNR",		0x1F2B3000, 1, 1, 0, 0, TMOUT, 1},
 };
 
@@ -832,8 +833,8 @@ static struct itmon_nodeinfo vec_p3[] = {
 	{S_NODE, "GPU",		0x20633000, 1, 1, 0, 0, TMOUT, 1},
 	{S_NODE, "SFR_P0_BUS2",	0x20613000, 1, 1, 0, 0, TMOUT, 1},
 	{S_NODE, "SFR_P1_BUS2",	0x20623000, 1, 1, 0, 0, TMOUT, 1},
-	{S_NODE, "SFR_TREX_BUS2", 0x20623000, 1, 1, 0, 0, TMOUT, 1},
-	{S_NODE, "TPU",		0x20623000, 1, 1, 0, 0, TMOUT, 1},
+	{S_NODE, "SFR_TREX_BUS2", 0x20603000, 1, 1, 0, 0, TMOUT, 1},
+	{S_NODE, "TPU",		0x20643000, 1, 1, 0, 0, TMOUT, 1},
 };
 
 static struct itmon_nodegroup nodegroup[] = {
@@ -1870,6 +1871,10 @@ static irqreturn_t itmon_irq_handler(int irq, void *data)
 	bool ret;
 	int i;
 
+#if IS_ENABLED(CONFIG_EXYNOS_CPUPM)
+	system_is_in_itmon = true;
+#endif
+
 	itmon_pattern_reset();
 	dbg_snapshot_itmon_irq_received();
 
@@ -1893,6 +1898,10 @@ static irqreturn_t itmon_irq_handler(int irq, void *data)
 		if (!pdata->in_do_policy)
 			itmon_do_dpm_policy(itmon);
 	}
+
+#if IS_ENABLED(CONFIG_EXYNOS_CPUPM)
+	system_is_in_itmon = false;
+#endif
 
 	return IRQ_HANDLED;
 }

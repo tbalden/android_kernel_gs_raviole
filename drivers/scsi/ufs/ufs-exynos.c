@@ -274,7 +274,7 @@ static void exynos_ufs_set_unipro_mclk(struct exynos_ufs *ufs)
 {
 	ufs->mclk_rate = (u32)clk_get_rate(ufs->clk_unipro);
 	if (!ufs->hba->clk_gating.is_suspended)
-		dev_info(ufs->dev, "mclk: %u\n", ufs->mclk_rate);
+		dev_info(ufs->dev, "mclk: %lu\n", ufs->mclk_rate);
 }
 
 static void exynos_ufs_fit_aggr_timeout(struct exynos_ufs *ufs)
@@ -445,8 +445,7 @@ static void exynos_ufs_set_features(struct ufs_hba *hba)
 
 	/* caps */
 	hba->caps = UFSHCD_CAP_CLK_GATING |
-			UFSHCD_CAP_HIBERN8_WITH_CLK_GATING |
-			UFSHCD_CAP_INTR_AGGR;
+			UFSHCD_CAP_HIBERN8_WITH_CLK_GATING;
 
 	/* quirks of common driver */
 	hba->quirks = UFSHCD_QUIRK_PRDT_BYTE_GRAN |
@@ -459,8 +458,8 @@ static void exynos_ufs_set_features(struct ufs_hba *hba)
 	if (of_find_property(np, "fixed-prdt-req_list-ocs", NULL))
 		hba->quirks &= ~(UFSHCD_QUIRK_PRDT_BYTE_GRAN |
 				UFSHCI_QUIRK_BROKEN_REQ_LIST_CLR |
-				UFSHCD_QUIRK_BROKEN_OCS_FATAL_ERROR) |
-				UFSHCI_QUIRK_SKIP_RESET_INTR_AGGR;
+				UFSHCD_QUIRK_BROKEN_OCS_FATAL_ERROR |
+				UFSHCI_QUIRK_SKIP_RESET_INTR_AGGR);
 }
 
 /*
@@ -873,9 +872,13 @@ static void exynos_ufs_hibern8_notify(struct ufs_hba *hba,
 	}
 }
 
-static int __exynos_ufs_suspend(struct ufs_hba *hba, enum ufs_pm_op pm_op)
+static int __exynos_ufs_suspend(struct ufs_hba *hba, enum ufs_pm_op pm_op,
+	enum ufs_notify_change_status status)
 {
 	struct exynos_ufs *ufs = to_exynos_ufs(hba);
+
+	if (status == PRE_CHANGE)
+		return 0;
 
 	if (!IS_C_STATE_ON(ufs) ||
 	    ufs->h_state != H_HIBERN8)
@@ -1151,11 +1154,11 @@ static int exynos_ufs_ioremap(struct exynos_ufs *ufs, struct platform_device *pd
 			ret = -ENOMEM;
 			break;
 		}
-		dev_info(dev, "%-10s 0x%llx\n", ufs_region_names[i], *p);
+		dev_info(dev, "%-10s %pK\n", ufs_region_names[i], *p);
 	}
 
 	if (ret)
-		dev_err(dev, "%s ioremap for %s, 0x%llx\n",
+		dev_err(dev, "%s ioremap for %s\n",
 			ufs_s_str_token[UFS_S_TOKEN_FAIL], ufs_region_names[i]);
 	dev_info(dev, "\n");
 	return ret;
@@ -1272,7 +1275,7 @@ static ssize_t exynos_ufs_sysfs_show_h8_delay(struct exynos_ufs *ufs,
 					      char *buf,
 					      enum exynos_ufs_param_id id)
 {
-	return snprintf(buf, PAGE_SIZE, "%u\n", ufs->hba->clk_gating.delay_ms);
+	return snprintf(buf, PAGE_SIZE, "%lu\n", ufs->hba->clk_gating.delay_ms);
 }
 
 static struct exynos_ufs_sysfs_attr ufs_s_h8_delay_ms = {
@@ -1544,33 +1547,13 @@ static int exynos_ufs_remove(struct platform_device *pdev)
 	return 0;
 }
 
-#ifdef CONFIG_PM_SLEEP
-static int exynos_ufs_suspend(struct device *dev)
-{
-	struct ufs_hba *hba = dev_get_drvdata(dev);
-
-	return ufshcd_system_suspend(hba);
-}
-
-static int exynos_ufs_resume(struct device *dev)
-{
-	struct ufs_hba *hba = dev_get_drvdata(dev);
-
-	return ufshcd_system_resume(hba);
-}
-#else
-#define exynos_ufs_suspend	NULL
-#define exynos_ufs_resume	NULL
-#endif /* CONFIG_PM_SLEEP */
-
 static void exynos_ufs_shutdown(struct platform_device *pdev)
 {
 	ufshcd_shutdown((struct ufs_hba *)platform_get_drvdata(pdev));
 }
 
 static const struct dev_pm_ops exynos_ufs_dev_pm_ops = {
-	.suspend		= exynos_ufs_suspend,
-	.resume			= exynos_ufs_resume,
+	SET_SYSTEM_SLEEP_PM_OPS(ufshcd_system_suspend, ufshcd_system_resume)
 };
 
 static const struct of_device_id exynos_ufs_match[] = {

@@ -8,12 +8,7 @@
 #define _TRACE_HOOK_CPUFREQ_H
 
 #include <linux/cpufreq.h>
-#include <linux/tracepoint.h>
 #include <trace/hooks/vendor_hooks.h>
-
-DECLARE_RESTRICTED_HOOK(android_rvh_show_max_freq,
-	TP_PROTO(struct cpufreq_policy *policy, unsigned int *max_freq),
-	TP_ARGS(policy, max_freq), 1);
 
 DECLARE_HOOK(android_vh_show_max_freq,
 	TP_PROTO(struct cpufreq_policy *policy, unsigned int *max_freq),
@@ -33,17 +28,17 @@ DECLARE_RESTRICTED_HOOK(android_rvh_cpufreq_transition,
 	TP_ARGS(policy), 1);
 
 DECLARE_HOOK(android_vh_cpufreq_resolve_freq,
-	TP_PROTO(struct cpufreq_policy *policy, unsigned int target_freq,
+	TP_PROTO(struct cpufreq_policy *policy, unsigned int *target_freq,
 		unsigned int old_target_freq),
 	TP_ARGS(policy, target_freq, old_target_freq));
 
 DECLARE_HOOK(android_vh_cpufreq_fast_switch,
-	TP_PROTO(struct cpufreq_policy *policy, unsigned int target_freq,
+	TP_PROTO(struct cpufreq_policy *policy, unsigned int *target_freq,
 		unsigned int old_target_freq),
 	TP_ARGS(policy, target_freq, old_target_freq));
 
 DECLARE_HOOK(android_vh_cpufreq_target,
-	TP_PROTO(struct cpufreq_policy *policy, unsigned int target_freq,
+	TP_PROTO(struct cpufreq_policy *policy, unsigned int *target_freq,
 		unsigned int old_target_freq),
 	TP_ARGS(policy, target_freq, old_target_freq));
 /* macro versions of hooks are no longer required */

@@ -560,8 +560,8 @@ static int bringup_cpu(unsigned int cpu)
 	int ret;
 
 	/*
-	* Reset stale stack state from the last time this CPU was online.
-	*/
+	 * Reset stale stack state from the last time this CPU was online.
+	 */
 	scs_task_reset(idle);
 	kasan_unpoison_task_stack(idle);
 
@@ -1127,6 +1127,8 @@ static int cpu_down(unsigned int cpu, enum cpuhp_state target)
 {
 	int err;
 
+	trace_android_vh_cpu_down(NULL);
+
 	cpu_maps_update_begin();
 	err = cpu_down_maps_locked(cpu, target);
 	cpu_maps_update_done();
@@ -1366,11 +1368,11 @@ int resume_cpus(struct cpumask *cpus)
 
 	prev_prio = pause_reduce_prio();
 
-	/* Lazy Resume. Build domains through schedule a workqueue on
-	 * resuming cpu. This is so that the resuming cpu can work more
-	 * early, and cannot add additional load to other busy cpu.
+	/* Lazy Resume.  Build domains immediately instead of scheduling
+	 * a workqueue.  This is so that the cpu can pull load when
+	 * sent a load balancing kick.
 	 */
-	cpuset_update_active_cpus_affine(cpumask_first(cpus));
+	cpuset_hotplug_workfn(NULL);
 
 	cpus_write_lock();
 
@@ -1591,7 +1593,7 @@ static int cpu_up(unsigned int cpu, enum cpuhp_state target)
 		return -EINVAL;
 	}
 
-	trace_android_vh_cpu_up(cpu);
+	trace_android_vh_cpu_up(NULL);
 
 	/*
 	 * CPU hotplug operations consists of many steps and each step

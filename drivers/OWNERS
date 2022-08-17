@@ -1,3 +1,4 @@
+per-file base/**=set noparent
 per-file base/**=gregkh@google.com,saravanak@google.com
 
 per-file block/zram/**=minchan@google.com
@@ -36,6 +37,8 @@ per-file dma-buf/heaps/samsung/**=*
 
 per-file gpu/exynos/**=*
 
+per-file hwtracing/coresight/**=*
+
 per-file i2c/busses/i2c-acpm.c=*
 per-file i2c/busses/i2c-exynos5.c=*
 per-file i2c/busses/i2c-exynos5.h=*
@@ -71,6 +74,7 @@ per-file misc/sscoredump/**=*
 per-file nfc/ese/**=*
 per-file nfc/st21nfc*=*
 
+per-file of/**=set noparent
 per-file of/**=saravanak@google.com
 
 per-file pci/controller/dwc/pcie-exynos*=*
@@ -84,6 +88,8 @@ per-file pinctrl/samsung/pinctrl-samsung.*=*
 
 per-file power/reset/debug-reboot.c=*
 per-file power/reset/exynos-reboot.c=*
+
+per-file pwm/pwm-samsung.c=*
 
 per-file regulator/core.c=saravanak@google.com
 per-file regulator/devres.c=saravanak@google.com

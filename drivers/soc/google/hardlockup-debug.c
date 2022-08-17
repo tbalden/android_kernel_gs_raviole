@@ -15,6 +15,8 @@
 #include <linux/platform_device.h>
 #include <linux/soc/samsung/exynos-smc.h>
 #include <linux/slab.h>
+#include <linux/atomic.h>
+#include <linux/android_debug_symbols.h>
 
 #include <linux/suspend.h>
 #include <linux/sched/task.h>
@@ -31,6 +33,7 @@
 #if IS_ENABLED(CONFIG_GS_ACPM)
 #include <soc/google/acpm_ipc_ctrl.h>
 #endif
+#include <soc/google/exynos-debug.h>
 
 #define HARDLOCKUP_DEBUG_MAGIC		(0xDEADBEEF)
 #define BUG_BRK_IMM_HARDLOCKUP		(0x801)
@@ -42,6 +45,8 @@
 #define FIQINFO_CPU_ID_MASK		(0xff)
 
 #define CLUSTER_0_CORE_NR		(6)
+
+#define MAX_PRINT_DELAY_MS		(1800U)
 
 unsigned int hardlockup_debug_cpu_resume_insts[] = {
 	0x100000a2, //    adr     x2, 14 <__fiq_pending>
@@ -144,6 +149,9 @@ static unsigned long hardlockup_debug_get_locked_cpu_mask(void)
 
 static int hardlockup_debug_bug_handler(struct pt_regs *regs, unsigned int esr)
 {
+	static atomic_t show_mem_once = ATOMIC_INIT(1);
+	static atomic_t print_schedstat_once = ATOMIC_INIT(1);
+
 	int cpu = raw_smp_processor_id();
 	unsigned int val;
 	unsigned long flags;
@@ -164,8 +172,14 @@ static int hardlockup_debug_bug_handler(struct pt_regs *regs, unsigned int esr)
 					hardlockup_debug_get_locked_cpu_mask();
 			} else {
 				pr_emerg("%s: invalid magic from "
-					"el3 fiq handler\n", __func__);
+					"el3 fiq handler: 0x%08x\n", __func__,
+					val);
 				raw_spin_unlock(&hardlockup_seq_lock);
+				/* To avoid log interleaves with log from other
+				 * cores, delay 200 ms for each core to finish
+				 * this call back function.
+				 */
+				mdelay(min(200 * num_online_cpus(), MAX_PRINT_DELAY_MS));
 				return DBG_HOOK_ERROR;
 			}
 		}
@@ -197,6 +211,16 @@ static int hardlockup_debug_bug_handler(struct pt_regs *regs, unsigned int esr)
 		dump_backtrace(regs, NULL, KERN_DEFAULT);
 		dbg_snapshot_save_context(regs, false);
 
+		if (atomic_cmpxchg(&show_mem_once, 1, 0)) {
+			void (*show_mem)(unsigned int, nodemask_t *) =
+				android_debug_symbol(ADS_SHOW_MEM);
+			show_mem(0, NULL);
+		}
+
+		if (atomic_cmpxchg(&print_schedstat_once, 1, 0)) {
+			s3c2410wdt_print_schedstat(KERN_EMERG);
+		}
+
 		if (ret)
 			raw_spin_unlock(&hardlockup_log_lock);
 
@@ -210,7 +234,7 @@ static int hardlockup_debug_bug_handler(struct pt_regs *regs, unsigned int esr)
 
 		spin_lock_irqsave(&pm_suspend_task_lock, flags);
 		if (pm_suspend_task) {
-			pr_emerg("pm_suspend_task '%s' %d hung (state=%d)",
+			pr_emerg("pm_suspend_task '%s' %d hung (state=%ld)",
 					pm_suspend_task->comm, pm_suspend_task->pid,
 					pm_suspend_task->state);
 			sched_show_task(pm_suspend_task);

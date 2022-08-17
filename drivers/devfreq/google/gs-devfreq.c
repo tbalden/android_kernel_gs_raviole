@@ -572,7 +572,7 @@ int exynos_devfreq_init_freq_table(struct exynos_devfreq_data *data)
 		exynos_devfreq_opp_round_freq(data->opp_list, data->max_state,
 			data->suspend_freq);
 
-	dev_info(data->dev, "initial_freq: %uKhz, suspend_freq: %uKhz\n",
+	dev_info(data->dev, "initial_freq: %luKhz, suspend_freq: %luKhz\n",
 		 data->devfreq_profile.initial_freq,
 		 data->suspend_freq);
 
@@ -781,6 +781,31 @@ static ssize_t store_debug_scaling_devfreq_min(struct device *dev,
 	return count;
 }
 
+static ssize_t cancel_boot_freq_store(struct device *dev,
+					       struct device_attribute *attr,
+					       const char *buf, size_t count)
+{
+	struct device *parent = dev->parent;
+	struct platform_device *pdev =
+		container_of(parent, struct platform_device, dev);
+	struct exynos_devfreq_data *data = platform_get_drvdata(pdev);
+	int ret;
+	bool cancel_flag;
+
+	ret = kstrtobool(buf, &cancel_flag);
+	if (ret) {
+		dev_err(dev, "Failed to store cancel_boot\n");
+		return ret;
+	}
+
+	if (cancel_flag) {
+		exynos_pm_qos_update_request_timeout(&data->boot_pm_qos,
+						     data->boot_freq,
+						     0);
+	}
+	return count;
+}
+
 static ssize_t show_alt_dvfs_info(struct device *dev,
 				  struct device_attribute *attr, char *buf)
 {
@@ -834,6 +859,7 @@ static DEVICE_ATTR(debug_scaling_devfreq_min, 0640,
 static DEVICE_ATTR(debug_scaling_devfreq_max, 0640,
 		   show_debug_scaling_devfreq_max,
 		   store_debug_scaling_devfreq_max);
+static DEVICE_ATTR_WO(cancel_boot_freq);
 
 static ssize_t time_in_state_show(struct device *dev,
 				  struct device_attribute *attr, char *buf)
@@ -868,6 +894,7 @@ static struct attribute *exynos_devfreq_sysfs_entries[] = {
 	&dev_attr_debug_scaling_devfreq_min.attr,
 	&dev_attr_debug_scaling_devfreq_max.attr,
 	&dev_attr_alt_dvfs_info.attr,
+	&dev_attr_cancel_boot_freq.attr,
 	NULL,
 };
 
@@ -1253,10 +1280,6 @@ int exynos_devfreq_parse_ect(struct exynos_devfreq_data *data,
 		return -ENODEV;
 
 	data->max_state = dvfs_domain->num_of_level;
-
-	if (data->l123_restrict)
-		data->max_state -= 3;
-
 	data->opp_list = kcalloc(data->max_state,
 				 sizeof(struct exynos_devfreq_opp_table),
 				 GFP_KERNEL);
@@ -1265,24 +1288,10 @@ int exynos_devfreq_parse_ect(struct exynos_devfreq_data *data,
 		return -ENOMEM;
 	}
 
-	if (data->l123_restrict) {
-		/*
-		 * Remove L1/L2/L3
-		 */
-		data->opp_list[0].idx = 0;
-		data->opp_list[0].freq = dvfs_domain->list_level[0].level;
-		data->opp_list[0].volt = 0;
-		for (i = 1; i < data->max_state; ++i) {
-			data->opp_list[i].idx = i;
-			data->opp_list[i].freq = dvfs_domain->list_level[i + 3].level;
-			data->opp_list[i].volt = 0;
-		}
-	} else {
-		for (i = 0; i < data->max_state; ++i) {
-			data->opp_list[i].idx = i;
-			data->opp_list[i].freq = dvfs_domain->list_level[i].level;
-			data->opp_list[i].volt = 0;
-		}
+	for (i = 0; i < dvfs_domain->num_of_level; ++i) {
+		data->opp_list[i].idx = i;
+		data->opp_list[i].freq = dvfs_domain->list_level[i].level;
+		data->opp_list[i].volt = 0;
 	}
 
 	return 0;
@@ -1335,13 +1344,6 @@ static int exynos_devfreq_parse_dt(struct device_node *np,
 	if (of_property_read_string(np, "devfreq_domain_name",
 				    &devfreq_domain_name))
 		return -ENODEV;
-
-	if (!of_property_read_string(np, "l123_restrict", &buf)) {
-		dev_info(data->dev, "l123_restrict %s\n", buf);
-		data->l123_restrict = (buf[0] != '0');
-	} else
-		data->l123_restrict = 0;
-
 	not_using_ect = exynos_devfreq_parse_ect(data, devfreq_domain_name);
 #endif
 	if (not_using_ect) {
@@ -2135,7 +2137,7 @@ static int exynos_devfreq_set_cur_state(struct thermal_cooling_device *cdev,
 
 	data->cooling_state = state;
 
-	dev_info(data->dev, "Set %s cur_state %lu, freq: %8uKhz\n", cdev->type,
+	dev_info(data->dev, "Set %s cur_state %lu, freq: %8luKhz\n", cdev->type,
 			 state, data->devfreq_profile.freq_table[state]);
 	if (exynos_pm_qos_request_active(&data->thermal_pm_qos_max))
 		exynos_pm_qos_update_request(&data->thermal_pm_qos_max,

@@ -1454,16 +1454,12 @@ void invalidate_bh_lrus(void)
 }
 EXPORT_SYMBOL_GPL(invalidate_bh_lrus);
 
-/*
- * It's called from workqueue context so we need a bh_lru_lock to close
- * the race with preemption/irq.
- */
-void invalidate_bh_lrus_cpu(void)
+void invalidate_bh_lrus_cpu(int cpu)
 {
 	struct bh_lru *b;
 
 	bh_lru_lock();
-	b = this_cpu_ptr(&bh_lrus);
+	b = per_cpu_ptr(&bh_lrus, cpu);
 	__invalidate_bh_lrus(b);
 	bh_lru_unlock();
 }
@@ -3189,7 +3185,7 @@ int __sync_dirty_buffer(struct buffer_head *bh, int op_flags)
 	}
 	return ret;
 }
-EXPORT_SYMBOL(__sync_dirty_buffer);
+EXPORT_SYMBOL_NS(__sync_dirty_buffer, ANDROID_GKI_VFS_EXPORT_ONLY);
 
 int sync_dirty_buffer(struct buffer_head *bh)
 {

@@ -101,7 +101,7 @@ struct exynos_ufs {
 	enum exynos_host_state h_state_prev;
 	enum exynos_clk_state c_state;
 
-	u32 mclk_rate;
+	unsigned long mclk_rate;
 
 	int num_lanes;
 
@@ -169,9 +169,6 @@ struct exynos_ufs {
 	/* ufs command logging */
 	u8 enable_cmd_log;
 	struct pixel_cmd_log cmd_log;
-
-	/* security_out write counter */
-	u32 security_out_wc;
 };
 
 static inline struct exynos_ufs *to_exynos_ufs(struct ufs_hba *hba)

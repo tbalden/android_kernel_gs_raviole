@@ -84,12 +84,12 @@ function update_aosp_abi {
   local out_dir="out_aosp_abi"
   local pixel_symbol_list="android/abi_gki_aarch64_generic"
 
-  # Rebase to aosp/android12-5.10 ToT before updating the ABI
+  # Rebase to aosp/android13-5.10 ToT before updating the ABI
   pushd aosp/ >/dev/null
     if [ "${CONTINUE_AFTER_REBASE}" = "0" ]; then
       git checkout -b ${FOR_AOSP_PUSH_BRANCH}
     fi
-    git fetch aosp android12-5.10 && git rebase FETCH_HEAD
+    git fetch aosp android13-5.10 && git rebase FETCH_HEAD
     err=$?
     if [ "${err}" != "0" ]; then
       echo "ERROR: Failed to rebase your aosp/ change(s) to the AOSP ToT." >&2
@@ -118,7 +118,7 @@ function update_aosp_abi {
   # cat'ing the private/gs-google/ and ToT aosp/ symbol lists together when
   # preparing for the AOSP ABI update. This retains all symbols in the aosp
   # version of the pixel symbol list.
-  git -C aosp show aosp/android12-5.10:"${pixel_symbol_list}" \
+  git -C aosp show aosp/android13-5.10:"${pixel_symbol_list}" \
     > aosp/android/abi_gki_aarch64_generic
   extract_pixel_symbols 0 "private/gs-google/${pixel_symbol_list}"
   merge_and_sort_symbol_lists "aosp/${pixel_symbol_list}" \
@@ -154,14 +154,32 @@ function update_aosp_abi {
       build/build_abi.sh --update "$@"
     # TODO: How do I know if the build failed or the ABI xml was updated??
 
+<<<<<<< HEAD
     # Create the git ABI xml commit for aosp/android12-5.10 if needed
     if [ -f "${out_dir}/dist/abi.report.short" ]; then
+=======
+    # Create the git ABI xml commit for aosp/android13-5.10 if needed
+    if [ -f "${out_dir}/dist/abi.report.short" ]; then
+      if [ "${commit_ret}" = "0" ]; then
+        # The ACK team requires the symbol list and xml changes to be committed
+        # in a single patch. So reset the git repo to drop the symbol list
+        # commit we made above.
+        git -C aosp reset HEAD~1
+      fi
+
+>>>>>>> upstream/android-gs-raviole-5.10-android13
       COMMIT_TEXT=$(mktemp -t abi_xml_commit_text.XXXXX)
       echo "ANDROID: Update the ABI representation" > ${COMMIT_TEXT}
       echo >> ${COMMIT_TEXT}
       cat ${out_dir}/dist/abi.report.short >> ${COMMIT_TEXT}
       echo >> ${COMMIT_TEXT}
       echo "Bug: ${BUG}" >> ${COMMIT_TEXT}
+<<<<<<< HEAD
+=======
+      if [ -n "${CHANGE_ID}" ]; then
+        echo "Change-Id: ${CHANGE_ID}" >> ${COMMIT_TEXT}
+      fi
+>>>>>>> upstream/android-gs-raviole-5.10-android13
       git -C aosp commit -s -F ${COMMIT_TEXT} -- android/
       commit_ret=$?
       rm -f ${COMMIT_TEXT}
@@ -169,7 +187,7 @@ function update_aosp_abi {
   fi
 
   echo "========================================================"
-  if ! git -C aosp diff --quiet aosp/android12-5.10..HEAD; then
+  if ! git -C aosp diff --quiet aosp/android13-5.10..HEAD; then
     if [ "${commit_ret}" = "0" ]; then
       if [ -n "${FOR_AOSP_PUSH_BRANCH}" ]; then
         echo " An ABI commit in aosp/ was created for you on the branch ${FOR_AOSP_PUSH_BRANCH}."
@@ -183,7 +201,7 @@ function update_aosp_abi {
     echo
     echo "   cd aosp"
     echo "   git log --oneline ${FOR_AOSP_PUSH_BRANCH}"
-    echo "   git push aosp ${FOR_AOSP_PUSH_BRANCH:-HEAD}:refs/for/android12-5.10"
+    echo "   git push aosp ${FOR_AOSP_PUSH_BRANCH:-HEAD}:refs/for/android13-5.10"
     echo
     if [ -n "${FOR_AOSP_PUSH_BRANCH}" ]; then
       echo " After pushing your changes to aosp/, you can delete the temporary"
@@ -212,8 +230,9 @@ function update_aosp_abi {
 function extract_pixel_symbols {
   echo "========================================================"
   echo " Extracting symbols and updating the symbol list"
-  local clang_prebuilt_bin=$(. private/gs-google/build.config.common && \
-    echo $CLANG_PREBUILT_BIN)
+  local clang_version=$(. private/gs-google/build.config.constants && \
+    echo $CLANG_VERSION)
+  local clang_prebuilt_bin=prebuilts/clang/host/linux-x86/clang-${clang_version}/bin
   local additions_only=$1
   local pixel_symbol_list=$2
 
@@ -250,7 +269,7 @@ function verify_new_symbols_require_abi_update {
   local pixel_symbol_list=$1
 
   pushd aosp/ >/dev/null
-    git diff --name-only aosp/android12-5.10..HEAD | grep -v "\<${pixel_symbol_list}\>"
+    git diff --name-only aosp/android13-5.10..HEAD | grep -v "\<${pixel_symbol_list}\>"
     err=$?
     if [ "${err}" = "0" ]; then
       # Found other files beside the pixel symbol list
@@ -259,7 +278,7 @@ function verify_new_symbols_require_abi_update {
       return
     fi
 
-    local added_symbols=$(git diff aosp/android12-5.10..HEAD "${pixel_symbol_list}" \
+    local added_symbols=$(git diff aosp/android13-5.10..HEAD "${pixel_symbol_list}" \
       | sed -n 's/^+  \([a-zA-Z_0-9]\+\)/\1/p')
     for s in ${added_symbols}; do
       grep "^  $s\>" --exclude=abi_gki_aarch64.xml \

@@ -32,6 +32,7 @@ struct max77759_plat {
 	struct power_supply *usb_psy;
 	struct max77759_contaminant *contaminant;
 	struct gvotable_election *usb_icl_proto_el;
+	struct gvotable_election *usb_icl_el;
 	struct gvotable_election *charger_mode_votable;
 	bool vbus_enabled;
 	/* Data role notified to the data stack */
@@ -69,6 +70,16 @@ struct max77759_plat {
 	/* 0:active_low 1:active_high */
 	bool in_switch_gpio_active_high;
 	bool first_toggle;
+	/* Set true to vote "limit_sink_current" on USB ICL */
+	bool limit_sink_enable;
+	/* uA */
+	unsigned int limit_sink_current;
+	/* Indicate that the Vbus OVP is restricted to quick ramp-up time for incoming voltage. */
+	bool quick_ramp_vbus_ovp;
+	/* Set true to vote "limit_accessory_current" on USB ICL */
+	bool limit_accessory_enable;
+	/* uA */
+	unsigned int limit_accessory_current;
 
 	/* True when TCPC is in SINK DEBUG ACCESSORY CONNECTED state */
 	u8 debug_acc_connected:1;
@@ -76,10 +87,13 @@ struct max77759_plat {
 	u8 sourcing_vbus:1;
 	/* Cache vbus_present as MAX77759 reports vbus present = 0 when vbus < 4V */
 	u8 vbus_present:1;
+	u8 cc1;
+	u8 cc2;
 
 	/* Runtime flags */
 	int frs;
 	bool in_frs;
+	bool vsafe0v;
 
 	/*
 	 * Current status of contaminant detection.
@@ -91,7 +105,7 @@ struct max77759_plat {
 	/* Userspace status */
 	bool contaminant_detection_userspace;
 	/* Consecutive floating cable instances */
-	unsigned int floating_cable_detected;
+	unsigned int floating_cable_or_sink_detected;
 	/* Timer to re-enable auto ultra lower mode for contaminant detection */
 	struct alarm reenable_auto_ultra_low_power_mode_alarm;
 	/* Bottom half for alarm */
@@ -114,6 +128,8 @@ struct max77759_plat {
 	struct kthread_worker *wq;
 	struct kthread_delayed_work icl_work;
 	struct kthread_delayed_work enable_vbus_work;
+	struct kthread_delayed_work vsafe0v_work;
+	struct kthread_delayed_work reset_ovp_work;
 
 	/* Notifier for data role */
 	struct usb_role_switch *usb_sw;
@@ -160,7 +176,7 @@ bool process_contaminant_alert(struct max77759_contaminant *contaminant, bool de
 int enable_contaminant_detection(struct max77759_plat *chip, bool maxq);
 void disable_contaminant_detection(struct max77759_plat *chip);
 bool is_contaminant_detected(struct max77759_plat *chip);
-bool is_floating_cable_detected(struct max77759_plat *chip);
+bool is_floating_cable_or_sink_detected(struct max77759_plat *chip);
 void disable_auto_ultra_low_power_mode(struct max77759_plat *chip, bool disable);
 
 #define VBUS_VOLTAGE_MASK		0x3ff
@@ -176,4 +192,5 @@ enum tcpm_psy_online_states {
 
 void enable_data_path_locked(struct max77759_plat *chip);
 void data_alt_path_active(struct max77759_plat *chip, bool active);
+void register_data_active_callback(void (*callback)(void *data_active_payload), void *data);
 #endif /* __TCPCI_MAX77759_H */
