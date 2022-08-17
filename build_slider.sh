@@ -8,11 +8,6 @@ function exit_if_error {
   fi
 }
 
-#
-EXPERIMENTAL_BUILD=0
-BUILD_KERNEL=1
-#
-
 EXPERIMENTAL_BUILD=${EXPERIMENTAL_BUILD:-0}
 TRIM_NONLISTED_KMI=${TRIM_NONLISTED_KMI:-1}
 LTO=${LTO:-thin}
@@ -20,7 +15,7 @@ KMI_SYMBOL_LIST_STRICT_MODE=${ENABLE_STRICT_KMI:-1}
 DEFAULT_CONFIG="private/gs-google/build.config.slider"
 DEVICE_KERNEL_BUILD_CONFIG=${DEVICE_KERNEL_BUILD_CONFIG:-${DEFAULT_CONFIG}}
 GKI_KERNEL_PREBUILTS_DIR=
-GKI_KERNEL_BUILD_CONFIG="private/gs-google/build.config.slider"
+GKI_KERNEL_BUILD_CONFIG=
 GKI_KERNEL_OUT_DIR=
 CHECK_DIRTY_AOSP=0
 if [ -z "${BUILD_KERNEL}" ]; then
@@ -32,19 +27,19 @@ if [ -z "${BUILD_KERNEL}" ]; then
   fi
 fi
 
-#if [ "${BUILD_KERNEL}" = "0" ]; then
-#  USING_PREBUILTS=1
-#  GKI_KERNEL_PREBUILTS_DIR=$(readlink -m "prebuilts/boot-artifacts/kernel/")
-#else
-#  USING_PREBUILTS=
-#  if [ "${EXPERIMENTAL_BUILD}" != "0" ]; then
-#    GKI_KERNEL_OUT_DIR=android12-5.10-staging
-#    GKI_KERNEL_BUILD_CONFIG=common/build.config.gki.aarch64
-#  else
-#    GKI_KERNEL_OUT_DIR=android12-5.10
-#    GKI_KERNEL_BUILD_CONFIG=aosp/build.config.gki.aarch64
-#  fi
-#fi
+if [ "${BUILD_KERNEL}" = "0" ]; then
+  USING_PREBUILTS=1
+  GKI_KERNEL_PREBUILTS_DIR=$(readlink -m "prebuilts/boot-artifacts/kernel/")
+else
+  USING_PREBUILTS=
+  if [ "${EXPERIMENTAL_BUILD}" != "0" ]; then
+    GKI_KERNEL_OUT_DIR=android13-5.10-staging
+    GKI_KERNEL_BUILD_CONFIG=common/build.config.gki.aarch64
+  else
+    GKI_KERNEL_OUT_DIR=android13-5.10
+    GKI_KERNEL_BUILD_CONFIG=aosp/build.config.gki.aarch64
+  fi
+fi
 
 if [ "${LTO}" = "none" ]; then
   echo "LTO=none requires disabling KMI_SYMBOL_STRICT_MODE. Setting to 0..."
@@ -81,6 +76,7 @@ export USING_PREBUILTS
 DEVICE_KERNEL_BUILD_CONFIG=${DEVICE_KERNEL_BUILD_CONFIG} \
   GKI_KERNEL_BUILD_CONFIG=${GKI_KERNEL_BUILD_CONFIG} \
   GKI_KERNEL_OUT_DIR=${GKI_KERNEL_OUT_DIR} \
+  GKI_KERNEL_PREBUILTS_DIR=${GKI_KERNEL_PREBUILTS_DIR} \
   GKI_DEFCONFIG_FRAGMENT=${GKI_DEFCONFIG_FRAGMENT} \
   ./build_mixed.sh "$@"
 
