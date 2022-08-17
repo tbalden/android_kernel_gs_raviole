@@ -81,11 +81,7 @@ function dump_boot_images_from_device() {
 	adb_wait_root
 	for img in dtbo boot vendor_boot vendor_dlkm; do
 		if [ "${img}" == "vendor_dlkm" ]; then
-<<<<<<< HEAD
-			adb -s $SERIALNO pull /dev/block/$(adb -s $SERIALNO shell getprop dev.mnt.blk.${img}) "${DEVICE_DIR}"/${img}.img
-=======
 			adb -s $SERIALNO pull /dev/block/$(adb -s $SERIALNO shell getprop dev.mnt.dev.${img}) "${DEVICE_DIR}"/${img}.img
->>>>>>> upstream/android-gs-raviole-5.10-android13
 		else
 			adb -s $SERIALNO pull /dev/block/bootdevice/by-name/${img}$(adb -s $SERIALNO shell getprop ro.boot.slot_suffix) "${DEVICE_DIR}"/${img}.img
 		fi

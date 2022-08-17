@@ -154,10 +154,6 @@ function update_aosp_abi {
       build/build_abi.sh --update "$@"
     # TODO: How do I know if the build failed or the ABI xml was updated??
 
-<<<<<<< HEAD
-    # Create the git ABI xml commit for aosp/android12-5.10 if needed
-    if [ -f "${out_dir}/dist/abi.report.short" ]; then
-=======
     # Create the git ABI xml commit for aosp/android13-5.10 if needed
     if [ -f "${out_dir}/dist/abi.report.short" ]; then
       if [ "${commit_ret}" = "0" ]; then
@@ -167,19 +163,15 @@ function update_aosp_abi {
         git -C aosp reset HEAD~1
       fi
 
->>>>>>> upstream/android-gs-raviole-5.10-android13
       COMMIT_TEXT=$(mktemp -t abi_xml_commit_text.XXXXX)
       echo "ANDROID: Update the ABI representation" > ${COMMIT_TEXT}
       echo >> ${COMMIT_TEXT}
       cat ${out_dir}/dist/abi.report.short >> ${COMMIT_TEXT}
       echo >> ${COMMIT_TEXT}
       echo "Bug: ${BUG}" >> ${COMMIT_TEXT}
-<<<<<<< HEAD
-=======
       if [ -n "${CHANGE_ID}" ]; then
         echo "Change-Id: ${CHANGE_ID}" >> ${COMMIT_TEXT}
       fi
->>>>>>> upstream/android-gs-raviole-5.10-android13
       git -C aosp commit -s -F ${COMMIT_TEXT} -- android/
       commit_ret=$?
       rm -f ${COMMIT_TEXT}
