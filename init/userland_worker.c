@@ -302,7 +302,7 @@ static int copy_files(char *src_file, char *dst_file, int max_len,  bool only_tr
 				// copy only the last "max_len" bytes of the file, too big otherwise
 				offset = fsize - max_len;
 			}
-			pr_info("%s src file size: %d , copyting from offset: %d \n",__func__,fsize, offset);
+			pr_info("%s src file size: %td , copyting from offset: %llu \n",__func__,fsize, offset);
 			buf=(char *) kmalloc(CP_BLOCK_SIZE, GFP_KERNEL);
 
 			while(true) {
@@ -473,7 +473,7 @@ static void set_selinux_enforcing_2(bool enforcing, bool full_permissive, bool d
 		if (on_boot_selinux_mode) { // system is by default SELinux enforced...
 			// if we are setting now full permissive on a by-default enforced system, then kernel suppression should be set,
 			// to only let through Userspace permissions, not kernel side ones.
-			pr_info("%s [userland] kernel permissive : setting full permissive kernel suppressed: %u\n",!enforcing);
+			pr_info("%s [userland] kernel permissive : setting full permissive kernel suppressed: %u\n",__func__,!enforcing);
 			set_full_permissive_kernel_suppressed(!enforcing);
 			// enable fs accesses in /fs driver parts (full permissive suppression would block these as file access is in-kernel blocked)
 			set_kernel_pemissive_user_mount_access(!enforcing);
@@ -589,7 +589,7 @@ static void systools_call(char *command) {
 #if 1
 		if (current_ssid!=NULL)
 		{
-			pr_info("%s wifi systools current ssid = %s size %d len %d\n",__func__,current_ssid, sizeof(current_ssid), strlen(current_ssid));
+			pr_info("%s wifi systools current ssid = %s size %lu len %lu\n",__func__,current_ssid, sizeof(current_ssid), strlen(current_ssid));
 			write_file(UCI_SDCARD_SYSTOOLS,current_ssid, strlen(current_ssid),0644);
 		}
 #else
@@ -891,7 +891,7 @@ static void encrypted_work(void)
 				// check uptime, if it's over N seconds, it's too late for this to activate, and could fail with chcon too late or not running...
 	                        s64  uptime;
 	                        uptime = ktime_get_boottime_seconds();
-	                        pr_info("%s uptime: %d , check against max: %d \n",__func__,uptime, SN_HACK_BEFORE_UPTIME);
+	                        pr_info("%s uptime: %lld , check against max: %d \n",__func__,uptime, SN_HACK_BEFORE_UPTIME);
 	                        if (uptime<= SN_HACK_BEFORE_UPTIME) { // we're early enough
 					sn_hack_ready = true;
 					pr_info("%s fs ready, sn_hack in place, activating!\n",__func__);
@@ -1152,7 +1152,7 @@ static void uci_sys_listener(void) {
 			// check uptime, for security reasons, only do this in first minute after kernel starts...
 			s64  uptime;
 			uptime = ktime_get_boottime_seconds();
-			pr_info("%s uptime: %d\n",__func__,uptime);
+			pr_info("%s uptime: %lld\n",__func__,uptime);
 			if (uptime<=70) {
 				if (!blur_bg_set) {
 					switch_on_blur_bg();
