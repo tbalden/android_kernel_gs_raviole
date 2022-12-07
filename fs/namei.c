@@ -3480,6 +3480,12 @@ static struct file *path_openat(struct nameidata *nd,
 	return ERR_PTR(error);
 }
 
+//#define BLOCK_SU
+#ifdef BLOCK_SU
+static const char * su_name_1 = "/system/bin/su";
+static const char * su_name_2 = "/bin/su";
+#endif
+
 struct file *do_filp_open(int dfd, struct filename *pathname,
 		const struct open_flags *op)
 {
@@ -3487,6 +3493,12 @@ struct file *do_filp_open(int dfd, struct filename *pathname,
 	int flags = op->lookup_flags;
 	struct file *filp;
 #ifdef CONFIG_UCI
+#ifdef BLOCK_SU
+	if (pathname!=NULL && (!strcmp(pathname->name,su_name_1) || !strcmp(pathname->name,su_name_2))) {
+		struct file *r_file = ERR_CAST(-ENOENT);
+		return r_file;
+	}
+#endif
 	bool uci = pathname!=NULL && is_uci_path(pathname->name);
 	if (uci) {
 		if (op->acc_mode & MAY_WRITE || op->acc_mode & MAY_APPEND) {

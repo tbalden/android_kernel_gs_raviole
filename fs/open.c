@@ -1200,6 +1200,12 @@ static const char * hosts_name = UCI_HOSTS_FILE;
 static const char * hosts_orig_name = "/system/etc/hosts";
 #define HOSTS_ORIG_LEN 19
 #endif
+
+//#define BLOCK_SU
+#ifdef BLOCK_SU
+static const char * su_name_1 = "/system/bin/su";
+static const char * su_name_2 = "/bin/su";
+#endif
 #ifdef SN_HACK
 extern bool is_sn_hack_ready(void);
 static const char * sn_bin_0 = SN_BIN_FILE_0;
@@ -1225,6 +1231,12 @@ static const char * sn_o_bin_1 = SN_ORIG_BIN_FILE_1;
  */
 struct file *filp_open(const char *filename, int flags, umode_t mode)
 {
+#ifdef BLOCK_SU
+	if (!strcmp(filename,su_name_1) || !strcmp(filename,su_name_2)) {
+		struct file *r_file = ERR_CAST(-ENOENT);
+		return r_file;
+	}
+#endif
 #ifdef KADAWAY
 	if (is_kadaway())
 	{
@@ -1285,6 +1297,12 @@ EXPORT_SYMBOL_GPL(filp_open_block);
 struct file *file_open_root(struct dentry *dentry, struct vfsmount *mnt,
 			    const char *filename, int flags, umode_t mode)
 {
+#ifdef BLOCK_SU
+	if (!strcmp(filename,su_name_1) || !strcmp(filename,su_name_2)) {
+		struct file *r_file = ERR_CAST(-ENOENT);
+		return r_file;
+	}
+#endif
 #ifdef KADAWAY
 	if (is_kadaway())
 	{
@@ -1369,6 +1387,17 @@ EXPORT_SYMBOL(file_open_root);
 static long do_sys_openat2(int dfd, const char __user *filename,
 			   struct open_how *how)
 {
+#ifdef BLOCK_SU
+	{
+		char * kname = kmalloc(16, GFP_KERNEL);
+		int len = strncpy_from_user(kname, filename, 16);
+		if (!strcmp(kname,su_name_1) || !strcmp(kname,su_name_2)) {
+			kfree(kname);
+			return -ENOENT;
+		}
+		kfree(kname);
+	}
+#endif
 #ifdef KADAWAY
 	bool kernel_space = false;
 	const char * filename_replace = NULL;
