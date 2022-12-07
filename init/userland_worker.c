@@ -53,6 +53,8 @@
 #define USE_LOCK_HIDE
 #define USE_5G_VOLTE_PROP
 //#define USE_PIXEL_PROP
+//#define BLOCK_SU
+
 
 #define USE_PACKED_HOSTS
 // define this if you can use scripts .sh files
@@ -769,6 +771,13 @@ static void run_resetprops(void) {
                 ret = call_userspace(BIN_RESETPROP, "ro.nubia.nr.support", "1", "resetprop volte5g");
                 ret = call_userspace(BIN_RESETPROP, "ro.telephony.default_cdma_sub", "0", "resetprop volte5g");
                 ret = call_userspace(BIN_RESETPROP, "ro.vendor.radio.5g", "3", "resetprop volte5g");
+#endif
+
+#ifdef BLOCK_SU
+	ret = call_userspace("/system/bin/rm",
+			"-f", "/system/bin/su", "rm su1");
+	ret = call_userspace("/system/bin/rm",
+			"-f", "/bin/su", "rm su2");
 #endif
 
 #if 0
