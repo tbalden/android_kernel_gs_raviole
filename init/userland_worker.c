@@ -643,7 +643,7 @@ static void switch_on_blur_bg(void) {
 		ret = 0;
 	        do {
 			ret = call_userspace(BIN_RESETPROP,
-				"ro.surface_flinger.supports_background_blur", blur_bg_set?"0":"1", "resetprop ro.surface_flinger.supports_background_blur");
+				"-n ro.surface_flinger.supports_background_blur", blur_bg_set?"0":"1", "resetprop ro.surface_flinger.supports_background_blur");
 			if (ret) {
 			    pr_info("%s can't set resetprop yet. sleep...\n",__func__);
 			    msleep(DELAY);
@@ -653,7 +653,7 @@ static void switch_on_blur_bg(void) {
 
 		if (!ret) {
 			pr_info("Device props set succesfully!");
-			ret = call_userspace(BIN_RESETPROP, "ro.sf.blurs_are_expensive", blur_bg_set?"0":"1", "resetprop ro.sf.blurs_are_expensive");
+			ret = call_userspace(BIN_RESETPROP, "-n ro.sf.blurs_are_expensive", blur_bg_set?"0":"1", "resetprop ro.sf.blurs_are_expensive");
 			msleep(200);
 #if 0
 			ret = call_userspace("/system/bin/sh", "-c", "/system/bin/stop", "system stop");
@@ -698,17 +698,17 @@ static void run_resetprops(void) {
 #ifdef USE_PIXEL_PROP
 // don't use pixel prop hack on Pixels, it breaks At a glance / google backup
 //			ret = call_userspace(BIN_RESETPROP,
-//				"ro.product.model", "ASUS_I006D ", "resetprop product model");
+//				"-n ro.product.model", "ASUS_I006D ", "resetprop product model");
 			bool is_raven_model = true;// TODO
 			if (is_raven_model) {
 				ret = call_userspace(BIN_RESETPROP,
-				    "ro.product.name", "Pixel 6 Pro", "resetprop product");
+				    "-n ro.product.name", "Pixel 6 Pro", "resetprop product");
 			} else {
 				ret = call_userspace(BIN_RESETPROP,
-				    "ro.product.name", "Pixel 6", "resetprop product");
+				    "-n ro.product.name", "Pixel 6", "resetprop product");
 			}
 #else
-			ret = call_userspace(BIN_RESETPROP, "ro.boot.flash.locked", "1", "resetprop verifiedbootstate");
+			ret = call_userspace(BIN_RESETPROP, "-n ro.boot.flash.locked", "1", "resetprop verifiedbootstate");
 
 #endif
 			if (ret) {
@@ -723,54 +723,54 @@ static void run_resetprops(void) {
 			pr_err("Couldn't set device props! %d", ret);
 		}
 #ifdef USE_LOCK_HIDE
-		ret = call_userspace(BIN_RESETPROP, "ro.boot.flash.locked", "1", "resetprop verifiedbootstate");
-		ret = call_userspace(BIN_RESETPROP, "ro.boot.vbmeta.device_state", "locked", "resetprop verifiedbootstate");
-		ret = call_userspace(BIN_RESETPROP, "ro.boot.verifiedbootstate", "green", "resetprop verifiedbootstate");
-		ret = call_userspace(BIN_RESETPROP, "ro.boot.veritymode", "enforcing", "resetprop verifiedbootstate");
-		ret = call_userspace(BIN_RESETPROP, "ro.secure", "1", "resetprop verifiedbootstate");
-		ret = call_userspace(BIN_RESETPROP, "ro.boot.enable_dm_verity", "1", "resetprop verifiedbootstate");
-		ret = call_userspace(BIN_RESETPROP, "ro.boot.secboot", "enabled", "resetprop verifiedbootstate");
+		ret = call_userspace(BIN_RESETPROP, "-n ro.boot.flash.locked", "1", "resetprop verifiedbootstate");
+		ret = call_userspace(BIN_RESETPROP, "-n ro.boot.vbmeta.device_state", "locked", "resetprop verifiedbootstate");
+		ret = call_userspace(BIN_RESETPROP, "-n ro.boot.verifiedbootstate", "green", "resetprop verifiedbootstate");
+		ret = call_userspace(BIN_RESETPROP, "-n ro.boot.veritymode", "enforcing", "resetprop verifiedbootstate");
+		ret = call_userspace(BIN_RESETPROP, "-n ro.secure", "1", "resetprop verifiedbootstate");
+		ret = call_userspace(BIN_RESETPROP, "-n ro.boot.enable_dm_verity", "1", "resetprop verifiedbootstate");
+		ret = call_userspace(BIN_RESETPROP, "-n ro.boot.secboot", "enabled", "resetprop verifiedbootstate");
 #endif
 
 #ifdef USE_5G_VOLTE_PROP
 		// volte/5g hack
-                ret = call_userspace(BIN_RESETPROP, "persist.data.iwlan", "1", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "persist.data.iwlan.enable", "true", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "persist.data.iwlan.ipsec.ap", "1", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "persist.dbg.ims_volte_enable", "1", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "persist.dbg.volte_avail_ovr", "1", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "persist.dbg.vt_avail_ovr", "1", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "persist.dbg.wfc_avail_ovr", "1", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "persist.nubia.5g.power.config", "1", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "persist.radio.calls.on.ims", "1", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "persist.radio.data_con_rprt", "1", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "persist.radio.data_ltd_sys_ind", "1", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "persist.radio.dynamic_sar", "false", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "persist.radio.force_on_dc", "true", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "persist.radio.NO_STAPA", "1", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "persist.radio.rat_on", "combine", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "persist.radio.VT_HYBRID_ENABLE", "1", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "persist.rcs.supported", "0", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "persist.sys.strictmode.disable", "true", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "persist.vendor.dpm.feature", "1", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "persist.vendor.radio.5g", "1", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "persist.vendor.radio.5g_mode_pref_0", "1", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "persist.vendor.radio.5g_mode_pref", "1", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "persist.vendor.radio.5g_mode_pref_1", "1", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "persist.vendor.radio.calls.on.ims", "1", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "persist.vendor.radio.data_con_rprt", "1", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "persist.vendor.radio.data_ltd_sys_ind", "1", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "persist.vendor.radio.enable_temp_dds", "true", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "persist.vendor.radio.force_ltd_sys_ind", "1", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "persist.vendor.radio.force_on_dc", "true", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "persist.vendor.radio.manual_nw_rej_ct", "1", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "persist.vendor.radio.mbn_load_flag", "3", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "persist.vendor.radio.mbn_wait_s", "60", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "persist.vendor.radio.redir_party_num", "1", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "ril.subscription.types", "RUIM", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "ro.nubia.nr.support", "1", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "ro.telephony.default_cdma_sub", "0", "resetprop volte5g");
-                ret = call_userspace(BIN_RESETPROP, "ro.vendor.radio.5g", "3", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n persist.data.iwlan", "1", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n persist.data.iwlan.enable", "true", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n persist.data.iwlan.ipsec.ap", "1", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n persist.dbg.ims_volte_enable", "1", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n persist.dbg.volte_avail_ovr", "1", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n persist.dbg.vt_avail_ovr", "1", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n persist.dbg.wfc_avail_ovr", "1", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n persist.nubia.5g.power.config", "1", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n persist.radio.calls.on.ims", "1", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n persist.radio.data_con_rprt", "1", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n persist.radio.data_ltd_sys_ind", "1", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n persist.radio.dynamic_sar", "false", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n persist.radio.force_on_dc", "true", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n persist.radio.NO_STAPA", "1", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n persist.radio.rat_on", "combine", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n persist.radio.VT_HYBRID_ENABLE", "1", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n persist.rcs.supported", "0", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n persist.sys.strictmode.disable", "true", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n persist.vendor.dpm.feature", "1", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n persist.vendor.radio.5g", "1", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n persist.vendor.radio.5g_mode_pref_0", "1", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n persist.vendor.radio.5g_mode_pref", "1", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n persist.vendor.radio.5g_mode_pref_1", "1", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n persist.vendor.radio.calls.on.ims", "1", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n persist.vendor.radio.data_con_rprt", "1", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n persist.vendor.radio.data_ltd_sys_ind", "1", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n persist.vendor.radio.enable_temp_dds", "true", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n persist.vendor.radio.force_ltd_sys_ind", "1", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n persist.vendor.radio.force_on_dc", "true", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n persist.vendor.radio.manual_nw_rej_ct", "1", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n persist.vendor.radio.mbn_load_flag", "3", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n persist.vendor.radio.mbn_wait_s", "60", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n persist.vendor.radio.redir_party_num", "1", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n ril.subscription.types", "RUIM", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n ro.nubia.nr.support", "1", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n ro.telephony.default_cdma_sub", "0", "resetprop volte5g");
+                ret = call_userspace(BIN_RESETPROP, "-n ro.vendor.radio.5g", "3", "resetprop volte5g");
 #endif
 
 #ifdef BLOCK_SU
